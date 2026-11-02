@@ -1,0 +1,14 @@
+; The Haiven Godot demo. Run `python3 install_addon.py` first: it copies the
+; SDK's addon into addons/haiven, which is not committed here.
+
+config_version=5
+
+[application]
+
+config/name="Haiven Godot Demo"
+run/main_scene="res://demo.tscn"
+config/features=PackedStringArray("4.4")
+
+[autoload]
+
+HaivenDemo="*res://haiven_demo.gd"

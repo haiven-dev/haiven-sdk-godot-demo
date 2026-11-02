@@ -1,0 +1,91 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://demo.gd" id="1"]
+[ext_resource type="Theme" path="res://demo_theme.tres" id="2"]
+[ext_resource type="PackedScene" path="res://addons/haiven/haiven_motd_panel.tscn" id="3"]
+
+[node name="Demo" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2")
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.031, 0.043, 0.067, 1)
+
+[node name="Row" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"HaivenDemoLayout"
+
+[node name="Chat" type="VBoxContainer" parent="Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HaivenDemoChatColumn"
+
+[node name="ChatTitle" type="Label" parent="Row/Chat"]
+layout_mode = 2
+theme_type_variation = &"HaivenDemoTitle"
+text = "Haiven chat"
+
+[node name="ChatDescription" type="Label" parent="Row/Chat"]
+layout_mode = 2
+theme_type_variation = &"HaivenDemoSupportingText"
+text = "Messages update in place as delivery and moderation state changes."
+autowrap_mode = 2
+
+[node name="Log" type="RichTextLabel" parent="Row/Chat"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"HaivenDemoChatLog"
+scroll_following = true
+selection_enabled = true
+
+[node name="Input" type="LineEdit" parent="Row/Chat"]
+layout_mode = 2
+theme_type_variation = &"HaivenDemoChatInput"
+placeholder_text = "Say something (Enter to send)"
+
+[node name="Side" type="VBoxContainer" parent="Row"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_type_variation = &"HaivenDemoInventoryColumn"
+
+[node name="HaivenMotdPanel" parent="Row/Side" instance=ExtResource("3")]
+layout_mode = 2
+
+[node name="InventoryTitle" type="Label" parent="Row/Side"]
+layout_mode = 2
+theme_type_variation = &"HaivenDemoSectionTitle"
+text = "Haiven items"
+
+[node name="InventoryDescription" type="Label" parent="Row/Side"]
+layout_mode = 2
+theme_type_variation = &"HaivenDemoSupportingText"
+text = "Active item entitlements"
+autowrap_mode = 2
+
+[node name="Inventory" type="ItemList" parent="Row/Side"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"HaivenDemoInventory"
+allow_reselect = true
