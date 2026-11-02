@@ -1,0 +1,93 @@
+[gd_resource type="Theme" load_steps=5 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_log"]
+bg_color = Color(0.055, 0.071, 0.102, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.188, 0.235, 0.322, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_field"]
+bg_color = Color(0.082, 0.106, 0.153, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.247, 0.318, 0.424, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_field_focus"]
+bg_color = Color(0.082, 0.106, 0.153, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.353, 0.706, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 11.0
+content_margin_top = 9.0
+content_margin_right = 11.0
+content_margin_bottom = 9.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_inventory"]
+bg_color = Color(0.075, 0.094, 0.133, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.188, 0.235, 0.322, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+
+[resource]
+default_font_size = 16
+HBoxContainer/constants/separation = 24
+VBoxContainer/constants/separation = 10
+"HaivenDemoLayout/base_type" = &"HBoxContainer"
+"HaivenDemoChatColumn/base_type" = &"VBoxContainer"
+"HaivenDemoInventoryColumn/base_type" = &"VBoxContainer"
+"HaivenDemoTitle/base_type" = &"Label"
+"HaivenDemoTitle/colors/font_color" = Color(0.925, 0.957, 1, 1)
+"HaivenDemoTitle/font_sizes/font_size" = 24
+"HaivenDemoSectionTitle/base_type" = &"Label"
+"HaivenDemoSectionTitle/colors/font_color" = Color(0.925, 0.957, 1, 1)
+"HaivenDemoSectionTitle/font_sizes/font_size" = 18
+"HaivenDemoSupportingText/base_type" = &"Label"
+"HaivenDemoSupportingText/colors/font_color" = Color(0.647, 0.714, 0.812, 1)
+"HaivenDemoSupportingText/font_sizes/font_size" = 14
+"HaivenDemoChatLog/base_type" = &"RichTextLabel"
+"HaivenDemoChatLog/colors/default_color" = Color(0.871, 0.91, 0.969, 1)
+"HaivenDemoChatLog/styles/normal" = SubResource("StyleBox_log")
+"HaivenDemoChatInput/base_type" = &"LineEdit"
+"HaivenDemoChatInput/colors/font_color" = Color(0.925, 0.957, 1, 1)
+"HaivenDemoChatInput/colors/font_placeholder_color" = Color(0.565, 0.635, 0.733, 1)
+"HaivenDemoChatInput/styles/normal" = SubResource("StyleBox_field")
+"HaivenDemoChatInput/styles/focus" = SubResource("StyleBox_field_focus")
+"HaivenDemoInventory/base_type" = &"ItemList"
+"HaivenDemoInventory/colors/font_color" = Color(0.871, 0.91, 0.969, 1)
+"HaivenDemoInventory/styles/panel" = SubResource("StyleBox_inventory")
