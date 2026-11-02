@@ -3,11 +3,22 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ADDON = HERE.parents[1] / "sdks/godot/gdscript/addons/haiven"
+
+
+def addon_source() -> Path:
+    """Sibling haiven-sdk-godot addon, or HAIVEN_SDK_GODOT when that value is non-empty."""
+    configured = os.environ.get("HAIVEN_SDK_GODOT")
+    if configured:
+        return Path(configured).expanduser().resolve() / "addons/haiven"
+    return (HERE.parent / "haiven-sdk-godot" / "addons/haiven").resolve()
+
+
+ADDON = addon_source()
 
 
 def install(project: Path = HERE) -> Path:
