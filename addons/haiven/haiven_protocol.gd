@@ -32,6 +32,25 @@ const _MAX_SAFE_DIGITS := "9007199254740991"
 
 static var _digit_run: RegEx
 
+## What a socket close means for the credential that opened it. Finite and
+## SDK-local: the server sends a close code and a reason string, and this is the
+## part of them a game acts on.
+## [br][br]
+## [code]TRANSPORT[/code]: the connection ended for a reason unrelated to the
+## credential -- network loss, a server restart, or the caller's own close. The
+## credential is still good, and a new socket may authenticate with it.
+## [br][code]CREDENTIAL_REFUSED[/code]: [code]1008 unauthorized[/code], the server
+## refused the credential in the handshake.
+## [br][code]CREDENTIAL_REVOKED[/code]: [code]1008 credential_revoked[/code], the
+## player or an operator revoked the game credential while the socket was open.
+## [br][code]POLICY[/code]: any other [code]1008[/code], for example
+## [code]parental_consent_denied[/code]. A new socket with the same credential
+## gets the same refusal.
+enum CloseKind { TRANSPORT, CREDENTIAL_REFUSED, CREDENTIAL_REVOKED, POLICY }
+
+## [code]websocket.StatusPolicyViolation[/code]: every close the server makes on purpose.
+const POLICY_VIOLATION := 1008
+
 
 ## Whether a received frame answers something the client sent.
 ##
@@ -130,3 +149,28 @@ static func _exceeds_safe_integer(digits: String) -> bool:
 	if digits.length() != _MAX_SAFE_DIGITS.length():
 		return digits.length() > _MAX_SAFE_DIGITS.length()
 	return digits > _MAX_SAFE_DIGITS
+
+
+## Classifies a close by its code and reason alone, identically in every SDK.
+static func classify_close(code: int, reason: String) -> CloseKind:
+	if code != POLICY_VIOLATION:
+		return CloseKind.TRANSPORT
+	match reason:
+		"unauthorized":
+			return CloseKind.CREDENTIAL_REFUSED
+		"credential_revoked":
+			return CloseKind.CREDENTIAL_REVOKED
+		_:
+			return CloseKind.POLICY
+
+
+## True when the credential will not authenticate again: discard it and run the
+## game login handoff before opening another socket.
+static func close_requires_sign_in(kind: CloseKind) -> bool:
+	return kind == CloseKind.CREDENTIAL_REFUSED or kind == CloseKind.CREDENTIAL_REVOKED
+
+
+## True when a new socket may authenticate with the same credential. Only a
+## transport close qualifies; reconnecting after any 1008 repeats the refusal.
+static func close_may_reconnect(kind: CloseKind) -> bool:
+	return kind == CloseKind.TRANSPORT
