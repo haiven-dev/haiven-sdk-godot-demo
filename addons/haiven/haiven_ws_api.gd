@@ -75,12 +75,32 @@ const NOTIFICATIONS_NEW := "notifications.new"
 const NOTIFICATIONS_READ := "notifications.read"
 ## `notifications.update`: a client request, the reply to a request.
 const NOTIFICATIONS_UPDATE := "notifications.update"
+## `p2p.ice.servers`: a client request, the reply to a request.
+const P2P_ICE_SERVERS := "p2p.ice.servers"
+## `p2p.signal`: a client request, the reply to a request.
+const P2P_SIGNAL := "p2p.signal"
+## `p2p.signal.ack`: a client request, the reply to a request, a server event.
+const P2P_SIGNAL_ACK := "p2p.signal.ack"
+## `p2p.signal.received`: a server event.
+const P2P_SIGNAL_RECEIVED := "p2p.signal.received"
 ## `ping`: a client request.
 const PING := "ping"
 ## `pong`: the reply to a request.
 const PONG := "pong"
 ## `presence.updated`: a server event.
 const PRESENCE_UPDATED := "presence.updated"
+## `session.closed`: a server event.
+const SESSION_CLOSED := "session.closed"
+## `session.member.joined`: a server event.
+const SESSION_MEMBER_JOINED := "session.member.joined"
+## `session.member.left`: a server event.
+const SESSION_MEMBER_LEFT := "session.member.left"
+## `session.peer.connected`: a client request, the reply to a request.
+const SESSION_PEER_CONNECTED := "session.peer.connected"
+## `session.resume`: a client request, the reply to a request.
+const SESSION_RESUME := "session.resume"
+## `session.updated`: a server event.
+const SESSION_UPDATED := "session.updated"
 
 ## Server events by wire type, with the contract type of each payload.
 const EVENT_PAYLOADS := {
@@ -108,7 +128,13 @@ const EVENT_PAYLOADS := {
 	"motd": "MotdV0",
 	"notifications.delete": "NotificationDeleteV0",
 	"notifications.new": "NotificationV0",
+	"p2p.signal.ack": "P2pSignalAckEventV0",
+	"p2p.signal.received": "P2pSignalReceivedV0",
 	"presence.updated": "PresenceV0",
+	"session.closed": "SessionClosedV0",
+	"session.member.joined": "SessionMemberJoinedV0",
+	"session.member.left": "SessionMemberLeftV0",
+	"session.updated": "SessionUpdatedV0",
 }
 
 ## Client requests by wire type: payload, reply type, and reply payload contract types.
@@ -122,6 +148,11 @@ const REQUESTS := {
 	"notifications.list.unread": {"payload": "", "reply_type": "notifications.list.unread", "reply_payload": "NotificationListV0"},
 	"notifications.read": {"payload": "NotificationReadRequestV0", "reply_type": "notifications.read", "reply_payload": ""},
 	"notifications.update": {"payload": "NotificationUpdateRequestV0", "reply_type": "notifications.update", "reply_payload": "NotificationV0"},
+	"p2p.ice.servers": {"payload": "", "reply_type": "p2p.ice.servers", "reply_payload": "P2pIceServersReplyV0"},
+	"p2p.signal": {"payload": "P2pSignalV0", "reply_type": "p2p.signal", "reply_payload": ""},
+	"p2p.signal.ack": {"payload": "P2pSignalAckV0", "reply_type": "p2p.signal.ack", "reply_payload": ""},
+	"session.peer.connected": {"payload": "SessionPeerConnectedV0", "reply_type": "session.peer.connected", "reply_payload": ""},
+	"session.resume": {"payload": "SessionResumeRequestV0", "reply_type": "session.resume", "reply_payload": "SessionResumeReplyV0"},
 	"ping": {"payload": "", "reply_type": "pong", "reply_payload": ""},
 }
 
@@ -136,7 +167,7 @@ func _init(send: Callable) -> void:
 
 ## Sends `chat.channel.active`. Answered only when refused, with an error code.
 ## Schema: chat-active-channel/v0
-## Error codes (open: an unlisted code is still possible): internal_error, invalid_payload.
+## Error codes (open: an unlisted code is still possible): forbidden, internal_error, invalid_payload, not_channel_member.
 func chat_channel_active(payload: Dictionary) -> Dictionary:
 	return _send.call("chat.channel.active", payload)
 
@@ -157,7 +188,7 @@ func chat_send(payload: Dictionary) -> Dictionary:
 
 ## Sends `chat.typing`. Answered only when refused, with an error code. Fans out `chat.typing`.
 ## Schema: chat-typing/v0
-## Error codes (open: an unlisted code is still possible): forbidden, internal_error, invalid_payload.
+## Error codes (open: an unlisted code is still possible): forbidden, internal_error, invalid_payload, not_channel_member.
 func chat_typing(payload: Dictionary) -> Dictionary:
 	return _send.call("chat.typing", payload)
 
@@ -193,6 +224,40 @@ func notifications_read(payload: Dictionary) -> Dictionary:
 ## Error codes (open: an unlisted code is still possible): db_failed, internal_error, invalid_payload.
 func notifications_update(payload: Dictionary) -> Dictionary:
 	return _send.call("notifications.update", payload)
+
+
+## Sends `p2p.ice.servers`. Answered by `p2p.ice.servers` (P2pIceServersReplyV0), or refused with an error code.
+## Error codes (open: an unlisted code is still possible): internal_error, rate_limited, relay_unavailable, session_not_found.
+func p2p_ice_servers() -> Dictionary:
+	return _send.call("p2p.ice.servers", null)
+
+
+## Sends `p2p.signal`. Answered by `p2p.signal`, or refused with an error code.
+## Schema: p2p-signal/v0
+## Error codes (open: an unlisted code is still possible): internal_error, invalid_payload, peer_not_in_session, rate_limited, session_not_found.
+func p2p_signal(payload: Dictionary) -> Dictionary:
+	return _send.call("p2p.signal", payload)
+
+
+## Sends `p2p.signal.ack`. Answered by `p2p.signal.ack`, or refused with an error code. Fans out `p2p.signal.ack`.
+## Schema: p2p-signal-ack/v0
+## Error codes (open: an unlisted code is still possible): internal_error, invalid_payload, peer_not_in_session, rate_limited, session_not_found.
+func p2p_signal_ack(payload: Dictionary) -> Dictionary:
+	return _send.call("p2p.signal.ack", payload)
+
+
+## Sends `session.peer.connected`. Answered by `session.peer.connected`, or refused with an error code.
+## Schema: session-peer-connected/v0
+## Error codes (open: an unlisted code is still possible): internal_error, invalid_payload, rate_limited, session_not_found.
+func session_peer_connected(payload: Dictionary) -> Dictionary:
+	return _send.call("session.peer.connected", payload)
+
+
+## Sends `session.resume`. Answered by `session.resume` (SessionResumeReplyV0), or refused with an error code.
+## Schema: session-resume-request/v0
+## Error codes (open: an unlisted code is still possible): internal_error, invalid_payload, rate_limited, session_not_found.
+func session_resume(payload: Dictionary) -> Dictionary:
+	return _send.call("session.resume", payload)
 
 
 ## Sends `ping`. Answered by `pong`, or refused with an error code.
@@ -357,10 +422,46 @@ func on_notifications_new(handler: Callable) -> void:
 	on_event("notifications.new", handler)
 
 
+## `p2p.signal.ack`, carrying P2pSignalAckEventV0.
+## Schema: p2p-signal-ack-event/v0
+func on_p2p_signal_ack(handler: Callable) -> void:
+	on_event("p2p.signal.ack", handler)
+
+
+## `p2p.signal.received`, carrying P2pSignalReceivedV0.
+## Schema: p2p-signal-received/v0
+func on_p2p_signal_received(handler: Callable) -> void:
+	on_event("p2p.signal.received", handler)
+
+
 ## `presence.updated`, carrying PresenceV0.
 ## Schema: presence/v0
 func on_presence_updated(handler: Callable) -> void:
 	on_event("presence.updated", handler)
+
+
+## `session.closed`, carrying SessionClosedV0.
+## Schema: session-closed/v0
+func on_session_closed(handler: Callable) -> void:
+	on_event("session.closed", handler)
+
+
+## `session.member.joined`, carrying SessionMemberJoinedV0.
+## Schema: session-member-joined/v0
+func on_session_member_joined(handler: Callable) -> void:
+	on_event("session.member.joined", handler)
+
+
+## `session.member.left`, carrying SessionMemberLeftV0.
+## Schema: session-member-left/v0
+func on_session_member_left(handler: Callable) -> void:
+	on_event("session.member.left", handler)
+
+
+## `session.updated`, carrying SessionUpdatedV0.
+## Schema: session-updated/v0
+func on_session_updated(handler: Callable) -> void:
+	on_event("session.updated", handler)
 
 
 ## Delivers an event frame to its handlers. False for a reply, an unknown type,

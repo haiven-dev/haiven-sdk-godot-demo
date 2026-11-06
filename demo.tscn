@@ -53,6 +53,13 @@ theme_type_variation = &"HaivenDemoSupportingText"
 text = "Messages update in place as delivery and moderation state changes."
 autowrap_mode = 2
 
+[node name="SignIn" type="Button" parent="Row/Chat"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 0
+theme_type_variation = &"HaivenDemoSignIn"
+text = "Continue with Haiven"
+
 [node name="Log" type="RichTextLabel" parent="Row/Chat"]
 layout_mode = 2
 size_flags_vertical = 3
