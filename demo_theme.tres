@@ -88,6 +88,7 @@ VBoxContainer/constants/separation = 10
 "HaivenDemoChatInput/colors/font_placeholder_color" = Color(0.565, 0.635, 0.733, 1)
 "HaivenDemoChatInput/styles/normal" = SubResource("StyleBox_field")
 "HaivenDemoChatInput/styles/focus" = SubResource("StyleBox_field_focus")
+"HaivenDemoSignIn/base_type" = &"Button"
 "HaivenDemoInventory/base_type" = &"ItemList"
 "HaivenDemoInventory/colors/font_color" = Color(0.871, 0.91, 0.969, 1)
 "HaivenDemoInventory/styles/panel" = SubResource("StyleBox_inventory")
