@@ -4,9 +4,9 @@ extends RefCounted
 
 const Item := preload("demo_item.gd")
 
-## The entitlement kind that is an inventory item (haiven-api KindItem).
+## The entitlement kind that is an inventory item (the game service KindItem).
 const ITEM_KIND := "item"
-## The state of a held benefit (haiven-api StateActive).
+## The state of a held benefit (the game service StateActive).
 const ACTIVE_STATE := "active"
 
 signal changed
