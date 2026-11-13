@@ -14,7 +14,7 @@ PINNED_VERSION = "4.5.1"
 STAGES = (
     ("offline", ["--script", "offline_quickstart.gd"], "HAIVEN_TEST_PASS readiness 12"),
     ("demo", ["--script", "demo_test.gd"], "HAIVEN_TEST_PASS demo 30"),
-    ("sign-in", ["--script", "demo_sign_in_test.gd"], "HAIVEN_TEST_PASS demo_sign_in 36"),
+    ("sign-in", ["--script", "demo_sign_in_test.gd"], "HAIVEN_TEST_PASS demo_sign_in 38"),
 )
 
 

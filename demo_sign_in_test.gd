@@ -238,6 +238,24 @@ func _run() -> void:
 		SignIn.classify("exchange_http_503") == SignIn.UNAVAILABLE
 		and SignIn.classify("exchange_http_400") == SignIn.LINK_EXPIRED)
 
+	# A code exchange that times out fails with a retry instead of holding the
+	# sign-in in "Waiting for Haiven" until the game restarts.
+	var reply := _exchange_reply
+	_exchange_reply = {"result": HTTPRequest.RESULT_TIMEOUT, "status": 0, "body": ""}
+	flow.sign_in()
+	var stalled := _query(_opened.back())
+	var stalled_port := int(Loopback.parse_redirect(String(stalled.get("delivery_uri", ""))).get("port", 0))
+	await _http_get(stalled_port, "/haiven/callback?code=code-2&state=%s" % String(stalled.get("state", "")).uri_encode(), flow._listener)
+	await _frames(func() -> bool: return flow.current != SignIn.WAITING)
+	_exchange_reply = reply
+	check("a timed-out exchange fails and offers a retry",
+		flow.current == SignIn.FAILED and flow.current["action"] == "Try again" and _exchanges.size() == 2)
+	var opens_before_retry := _opened.size()
+	flow.sign_in()
+	check("and Try again starts a fresh sign-in",
+		flow.current == SignIn.WAITING and _opened.size() == opens_before_retry + 1)
+	flow._abandon()
+
 	# The autoload ends the credential on proof it is invalid, not on a 403.
 	var demo: Node = Demo.new()
 	demo.sign_in = _sign_in(_options(redirect), "placeholder-env-token")
