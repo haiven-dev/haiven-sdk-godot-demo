@@ -1,2 +1,4 @@
 # The Haiven addon is part of this repository so the project opens on clone.
 /.godot/
+__pycache__/
+build/

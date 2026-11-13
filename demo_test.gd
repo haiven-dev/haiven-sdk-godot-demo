@@ -86,9 +86,13 @@ func _initialize() -> void:
 	var read := func(name: String) -> String: return env.get(name, "")
 	check("missing settings are named", Demo.read_settings(read).get("missing", "")
 		== "HAIVEN_DEMO_REALTIME_URL, HAIVEN_DEMO_CHANNEL_ID")
+	var no_integration := Demo.motd_integration_id(read)
+	env["HAIVEN_DEMO_INTEGRATION_ID"] = "integration"
 	env["HAIVEN_DEMO_REALTIME_URL"] = "wss://api.example.test/v0/ws"
 	env["HAIVEN_DEMO_CHANNEL_ID"] = "general"
-	check("complete settings load", Demo.read_settings(read).get("HAIVEN_DEMO_CHANNEL_ID") == "general")
+	check("complete settings load, and the MOTD id is the integration id, never the app id, empty when unset",
+		Demo.read_settings(read).get("HAIVEN_DEMO_CHANNEL_ID") == "general"
+		and no_integration == "" and Demo.motd_integration_id(read) == "integration")
 
 
 	var socket := FakeSocket.new()

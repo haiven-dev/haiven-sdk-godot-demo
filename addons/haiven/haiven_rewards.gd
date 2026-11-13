@@ -4,6 +4,13 @@
 ## cannot grant twice. Call [method clear] on logout or player replacement: a
 ## completion from the old player then returns [constant SESSION_CHANGED] and
 ## cannot be reported as the new player's result.
+##
+## [method save_claim] records `{claimId, rewardRef}` before the player links
+## and does not post it. Pass a store as the fourth constructor argument to keep
+## that id across launches; [FileStore] writes `user://haiven-reward-claims.json`.
+## After the handoff, [method submit_saved] posts each intent on the user claim
+## route under the saved id. Grant loot only when [method Outcome.succeeded] is
+## true. [method clear] drops in-flight ids and leaves saved intents.
 class_name HaivenRewards
 extends RefCounted
 
@@ -60,26 +67,66 @@ class Outcome:
 
 
 ## Emitted only for a recorded claim that still belongs to the current player
-## session. The callback may call [method clear]; the awaiting caller then gets
-## [constant SESSION_CHANGED], not a stale success.
+## session. This is the loot signal. The callback may call [method clear]; the
+## awaiting caller then gets [constant SESSION_CHANGED], not a stale success.
 signal claimed(outcome: Outcome)
+
+## Emitted for every submitted claim that still belongs to the current player,
+## including a refusal. A refusal is not loot. [method save_claim] does not emit.
+signal settled(outcome: Outcome)
 
 var _api: RefCounted
 var _integration_id: String
 var _new_claim_id: Callable
+var _store: Variant
 var _pending_ids: Dictionary = {}
+var _saved: Array = []
 var _session_generation := 0
 var _configuration_error := ""
 
 
-func _init(api: RefCounted, integration_id: String, new_claim_id: Callable = Callable()) -> void:
+## Writes the saved-intent document. The default path is under `user://`.
+class FileStore:
+	extends RefCounted
+	var path: String
+
+	func _init(file_path: String = "user://haiven-reward-claims.json") -> void:
+		path = file_path
+
+	func load() -> String:
+		if not FileAccess.file_exists(path):
+			return ""
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file == null:
+			return ""
+		var text := file.get_as_text()
+		file.close()
+		return text
+
+	func save(document: String) -> void:
+		var file := FileAccess.open(path, FileAccess.WRITE)
+		if file == null:
+			return
+		file.store_string(document)
+		file.close()
+
+
+func _init(
+	api: RefCounted,
+	integration_id: String,
+	new_claim_id: Callable = Callable(),
+	store: Variant = null,
+) -> void:
 	_api = api
 	_integration_id = integration_id
 	_new_claim_id = new_claim_id if new_claim_id.is_valid() else new_uuid_v7
+	_store = store
 	if api == null:
 		_configuration_error = "api is required"
 	elif integration_id == "":
 		_configuration_error = "integration_id is required"
+	else:
+		_load_saved()
 
 
 ## Whether the signed-in account may receive subscriber rewards.
@@ -98,9 +145,11 @@ func claim(reward_ref: String) -> Outcome:
 	var generation := _session_generation
 	var claim_id := str(_pending_ids.get(reward_ref, ""))
 	if claim_id == "":
-		claim_id = str(_new_claim_id.call())
+		claim_id = _saved_claim_id(reward_ref)
 		if claim_id == "":
-			return _invalid("invalid_claim_id", "claim id generator returned an empty value", true)
+			claim_id = str(_new_claim_id.call())
+			if claim_id == "":
+				return _invalid("invalid_claim_id", "claim id generator returned an empty value", true)
 		_pending_ids[reward_ref] = claim_id
 	var outcome := await _settle(func() -> Variant:
 		return await _api.post_users_me_rewards_claims({
@@ -114,6 +163,11 @@ func claim(reward_ref: String) -> Outcome:
 	# Only the attempt that still owns this id may release it.
 	if not outcome.retryable and _pending_ids.get(reward_ref) == claim_id:
 		_pending_ids.erase(reward_ref)
+	if not outcome.retryable:
+		_release_saved(reward_ref, claim_id)
+	_emit_settled(outcome, generation)
+	if generation != _session_generation:
+		return _session_changed()
 	if outcome.succeeded():
 		claimed.emit(outcome)
 		if generation != _session_generation:
@@ -139,11 +193,66 @@ func refresh(recorded_claim: Dictionary) -> Outcome:
 	)
 	if generation != _session_generation:
 		return _session_changed()
+	_emit_settled(outcome, generation)
+	if generation != _session_generation:
+		return _session_changed()
 	if outcome.succeeded():
 		claimed.emit(outcome)
 		if generation != _session_generation:
 			return _session_changed()
 	return outcome
+
+
+## Records a claim intent before the player links. Reuses the id already saved
+## or pending for this reward. Does not post, and does not report a claim.
+func save_claim(reward_ref: String) -> Dictionary:
+	if _configuration_error != "" or reward_ref == "" or reward_ref.length() > 128:
+		return {}
+	for item in _saved:
+		if str(item.get("rewardRef", "")) == reward_ref:
+			return (item as Dictionary).duplicate()
+	var claim_id := str(_pending_ids.get(reward_ref, ""))
+	if claim_id == "":
+		claim_id = str(_new_claim_id.call())
+		if claim_id == "":
+			return {}
+	var saved := {
+		"claimId": claim_id,
+		"integrationId": _integration_id,
+		"rewardRef": reward_ref,
+	}
+	_saved.append(saved)
+	_persist()
+	return saved.duplicate()
+
+
+## Saved intents in the order they were first recorded.
+func saved_claims() -> Array:
+	return _saved.duplicate(true)
+
+
+## Posts every saved intent on the user claim route under the id [method save_claim]
+## kept. A [constant SESSION_CHANGED] result stays in the returned array and the
+## remaining intents are still submitted. Grant loot only for a succeeded outcome.
+func submit_saved() -> Array:
+	var reward_refs: Array[String] = []
+	for item in _saved:
+		reward_refs.append(str(item.get("rewardRef", "")))
+	var outcomes: Array = []
+	for reward_ref in reward_refs:
+		if _saved_claim_id(reward_ref) == "":
+			continue
+		outcomes.append(await claim(reward_ref))
+	return outcomes
+
+
+## Submits saved intents when the handoff stores a credential.
+func follow_handoff(handoff: Object) -> void:
+	if handoff == null or not handoff.has_signal("completed"):
+		return
+	handoff.completed.connect(func(_credential: Dictionary) -> void:
+		await submit_saved()
+	)
 
 
 ## The claim id that the next attempt for this reward will reuse.
@@ -152,6 +261,7 @@ func pending(reward_ref: String) -> String:
 
 
 ## Forgets uncertain claim ids because the signed-in player changed.
+## Saved intents stay, so the next link submits the same claim id.
 func clear() -> void:
 	_pending_ids.clear()
 	_session_generation += 1
@@ -295,3 +405,77 @@ static func _session_changed() -> Outcome:
 		false,
 		"haiven: the reward response belongs to an invalidated player session",
 	)
+
+
+func _saved_claim_id(reward_ref: String) -> String:
+	for item in _saved:
+		if str(item.get("rewardRef", "")) == reward_ref:
+			return str(item.get("claimId", ""))
+	return ""
+
+
+func _release_saved(reward_ref: String, claim_id: String) -> void:
+	for index in range(_saved.size()):
+		var item: Dictionary = _saved[index]
+		if str(item.get("rewardRef", "")) == reward_ref and str(item.get("claimId", "")) == claim_id:
+			_saved.remove_at(index)
+			_persist()
+			return
+
+
+func _persist() -> void:
+	if _store == null or not _store.has_method("save"):
+		return
+	_store.call("save", JSON.stringify(_saved))
+
+
+func _json_string(value: Variant) -> bool:
+	var kind := typeof(value)
+	return kind == TYPE_STRING or kind == TYPE_STRING_NAME
+
+
+func _load_saved() -> void:
+	if _store == null or not _store.has_method("load"):
+		return
+	var raw: Variant = _store.call("load")
+	if not raw is String or str(raw) == "":
+		return
+	var text := str(raw).strip_edges()
+	# Godot logs an error for a failed parse, and the headless gate treats that
+	# line as a failure. A document that is not an array is left unloaded.
+	if not text.begins_with("["):
+		return
+	var parsed: Variant = JSON.parse_string(text)
+	if not parsed is Array:
+		return
+	var loaded: Array = []
+	for item in parsed:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		var record: Dictionary = item
+		if not _json_string(record.get("claimId")) or not _json_string(record.get("integrationId")) or not _json_string(record.get("rewardRef")):
+			continue
+		var claim_id := str(record.get("claimId"))
+		var integration_id := str(record.get("integrationId"))
+		var reward_ref := str(record.get("rewardRef"))
+		if claim_id == "" or integration_id != _integration_id or reward_ref == "" or reward_ref.length() > 128:
+			continue
+		var duplicate := false
+		for existing in loaded:
+			if str(existing.get("rewardRef", "")) == str(reward_ref):
+				duplicate = true
+				break
+		if duplicate:
+			continue
+		loaded.append({
+			"claimId": claim_id,
+			"integrationId": integration_id,
+			"rewardRef": reward_ref,
+		})
+	_saved = loaded
+
+
+func _emit_settled(outcome: Outcome, generation: int) -> void:
+	if generation != _session_generation:
+		return
+	settled.emit(outcome)

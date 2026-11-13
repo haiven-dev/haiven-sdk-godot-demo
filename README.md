@@ -56,12 +56,30 @@ The normal interactive demo uses a live WebSocket and REST API:
    |---|---|
    | `HAIVEN_DEMO_BASE_URL` | `https://<api host>/v0` |
    | `HAIVEN_DEMO_REALTIME_URL` | `wss://<api host>/v0/ws` |
-   | `HAIVEN_DEMO_APP_ID` | the integration's app id |
+   | `HAIVEN_DEMO_APP_ID` | the app id |
    | `HAIVEN_DEMO_CHANNEL_ID` | the chat channel to show |
-   | `HAIVEN_DEMO_ACCESS_TOKEN` | a player access token |
+   | `HAIVEN_DEMO_INTEGRATION_ID` | the launch integration id, not the app id |
+   | `HAIVEN_DEMO_SIGN_IN_URL` | `https://sbx.haiven.gg/connect/game` |
+   | `HAIVEN_DEMO_REDIRECT_URI` | optional; sign-in origin plus `/connect/game/callback` |
+   | `HAIVEN_DEMO_ACCESS_TOKEN` | optional player access token; skips the browser |
 
-2. Open `project.godot` in Godot 4.5.1 and run it. With a variable missing,
-   the log says which one and the demo stays offline.
+   The first four are required. If one is missing, the log names it and the
+   demo stays offline. Message of the Day calls GET /motd with
+   `HAIVEN_DEMO_INTEGRATION_ID` and skips that read when it is unset. That
+   value is the game's public launch integration id, not
+   `HAIVEN_DEMO_APP_ID`. A wrong integration id is a 400. Continue with
+   Haiven stays hidden until `HAIVEN_DEMO_SIGN_IN_URL` and the integration
+   id are set and the redirect is an absolute http(s) URL. The sign-in page
+   is not inferred from the API URL. Leave `HAIVEN_DEMO_REDIRECT_URI` unset
+   to use the sign-in origin plus `/connect/game/callback`, which needs that
+   page to be an absolute http(s) URL (sandbox
+   `https://sbx.haiven.gg/connect/game/callback`, local
+   `http://127.0.0.1:3000/connect/game/callback`). Set the variable only to
+   replace that default. The demo does not listen on that address. A
+   non-empty `HAIVEN_DEMO_ACCESS_TOKEN` starts the demo already signed in
+   and never opens a browser.
+
+2. Open `project.godot` in Godot 4.5.1 and run it.
 
 ## Verification
 

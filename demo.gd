@@ -1,24 +1,29 @@
 # Behavior for the editor-authored demo scene. Layout, presentation, and the
 # semantic Theme hooks live in demo.tscn and demo_theme.tres; this script only
-# binds those controls to the HaivenDemo autoload.
+# binds those controls, the sign-in button among them, to the HaivenDemo autoload.
 extends Control
 
 @onready var _log: RichTextLabel = $Row/Chat/Log
 @onready var _input: LineEdit = $Row/Chat/Input
 @onready var _inventory: ItemList = $Row/Side/Inventory
 @onready var _motd: PanelContainer = $Row/Side/HaivenMotdPanel
+@onready var _sign_in: Button = $Row/Chat/SignIn
 var _lines: Array[String] = []
 var _keyed: Dictionary = {}  # client message id -> index in _lines
 
 
 func _ready() -> void:
 	_input.text_submitted.connect(_on_submitted)
+	_sign_in.pressed.connect(_on_sign_in_pressed)
 	var demo := _demo()
 	if demo != null:
 		demo.line_changed.connect(show_line)
 		demo.inventory.changed.connect(_on_inventory_changed)
 		if demo.identity != null:
 			_motd.bind(demo.identity)
+		if demo.sign_in != null:
+			demo.sign_in.changed.connect(show_sign_in)
+			show_sign_in(demo.sign_in.current)
 	_motd.action_requested.connect(_on_motd_action_requested)
 	_input.grab_focus()
 
@@ -47,6 +52,19 @@ func _on_submitted(text: String) -> void:
 	if demo != null:
 		demo.send_chat(text)
 	_input.clear()
+
+
+## Shows the sign-in control with the presentation's caption, or hides it.
+func show_sign_in(presentation: Dictionary) -> void:
+	var action := String(presentation.get("action", ""))
+	_sign_in.text = action
+	_sign_in.visible = action != ""
+
+
+func _on_sign_in_pressed() -> void:
+	var demo := _demo()
+	if demo != null and demo.sign_in != null:
+		demo.sign_in.sign_in()
 
 
 func _on_inventory_changed() -> void:

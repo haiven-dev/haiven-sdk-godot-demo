@@ -50,3 +50,11 @@ func grant_from(response: Variant) -> PackedStringArray:
 	if not added.is_empty():
 		changed.emit()
 	return added
+
+
+## Drops every item so the next account does not keep this one's inventory.
+func clear() -> void:
+	if items.is_empty():
+		return
+	items.clear()
+	changed.emit()

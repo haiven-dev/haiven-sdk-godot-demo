@@ -12,3 +12,9 @@ config/features=PackedStringArray("4.4")
 [autoload]
 
 HaivenDemo="*res://haiven_demo.gd"
+
+[rendering]
+
+; The macOS export preset is universal (x86_64 + arm64), which Godot refuses
+; unless ETC2/ASTC textures are imported alongside S3TC/BPTC.
+textures/vram_compression/import_etc2_astc=true

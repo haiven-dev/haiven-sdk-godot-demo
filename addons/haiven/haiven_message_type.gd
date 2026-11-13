@@ -90,6 +90,26 @@ const AGEGATE_UPDATED: String = "agegate.updated"
 const ENTITLEMENTS_UPDATED: String = "entitlements.updated"
 ## The registered `motd` wire value.
 const MOTD: String = "motd"
+## The registered `session.resume` wire value.
+const SESSION_RESUME: String = "session.resume"
+## The registered `session.peer.connected` wire value.
+const SESSION_PEER_CONNECTED: String = "session.peer.connected"
+## The registered `session.member.joined` wire value.
+const SESSION_MEMBER_JOINED: String = "session.member.joined"
+## The registered `session.member.left` wire value.
+const SESSION_MEMBER_LEFT: String = "session.member.left"
+## The registered `session.updated` wire value.
+const SESSION_UPDATED: String = "session.updated"
+## The registered `session.closed` wire value.
+const SESSION_CLOSED: String = "session.closed"
+## The registered `p2p.signal` wire value.
+const P2P_SIGNAL: String = "p2p.signal"
+## The registered `p2p.signal.received` wire value.
+const P2P_SIGNAL_RECEIVED: String = "p2p.signal.received"
+## The registered `p2p.signal.ack` wire value.
+const P2P_SIGNAL_ACK: String = "p2p.signal.ack"
+## The registered `p2p.ice.servers` wire value.
+const P2P_ICE_SERVERS: String = "p2p.ice.servers"
 
 const _REGISTERED := {
 	PING: true,
@@ -132,6 +152,16 @@ const _REGISTERED := {
 	AGEGATE_UPDATED: true,
 	ENTITLEMENTS_UPDATED: true,
 	MOTD: true,
+	SESSION_RESUME: true,
+	SESSION_PEER_CONNECTED: true,
+	SESSION_MEMBER_JOINED: true,
+	SESSION_MEMBER_LEFT: true,
+	SESSION_UPDATED: true,
+	SESSION_CLOSED: true,
+	P2P_SIGNAL: true,
+	P2P_SIGNAL_RECEIVED: true,
+	P2P_SIGNAL_ACK: true,
+	P2P_ICE_SERVERS: true,
 }
 
 ## Whether this binding was compiled knowing the value. Never a parse gate.

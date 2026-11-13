@@ -45,6 +45,12 @@ func send(content: String) -> void:
 	chat.send(channel_id, content)
 
 
+## Drops every tracked send so the next account's session cannot resend them.
+func forget_outbox() -> void:
+	for message in chat.outbox():
+		chat.forget(message)
+
+
 func _on_outgoing_changed(message: RefCounted) -> void:
 	if message.channel_id == channel_id:
 		line_changed.emit(message.client_message_id, describe(message))
