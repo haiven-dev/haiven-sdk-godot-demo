@@ -65,6 +65,10 @@ enum State { PENDING, AUTHENTICATED, EXPIRED, CLOSED }
 
 var state: State = State.PENDING
 
+## What the close means for the credential, a [enum HaivenProtocol.CloseKind],
+## once the session is closed; -1 before. Set before [signal closed] is emitted.
+var close_kind: int = -1
+
 # A WebSocketPeer, or any object with the polling methods this class calls on
 # it -- the client conformance runner drives the session through a scripted one.
 var _socket: Object
@@ -134,7 +138,10 @@ func poll() -> bool:
 		_awaiting_resend.clear()
 		_in_flight.clear()
 		if was != State.CLOSED:
-			closed.emit(_socket.get_close_code(), _socket.get_close_reason())
+			var code: int = _socket.get_close_code()
+			var reason: String = _socket.get_close_reason()
+			close_kind = Protocol.classify_close(code, reason)
+			closed.emit(code, reason)
 		return false
 
 	return true

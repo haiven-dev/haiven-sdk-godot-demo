@@ -5,9 +5,9 @@ active Haiven *item* entitlements. Godot has no first-party sample game to
 integrate into (decision 0001), so this demo is a complete scene, kept in the
 repository.
 
-**Supported runtime:** Godot 4.5.1, the SDK's pinned version, using the
-GDScript addon from `sdks/godot/gdscript/addons/haiven`. Desktop and editor.
-Web exports would need the browser's HTTP rules (CORS) for the REST read.
+**Supported runtime:** Godot 4.5.1. The GDScript addon ships in this
+repository at `addons/haiven`. Desktop and editor. Web exports would need the
+browser's HTTP rules (CORS) for the REST read.
 
 ## What is here
 
@@ -36,41 +36,61 @@ contains no third-party artwork, font, or imported asset.
 
 ## Running it
 
-For a no-network smoke test that uses no secrets, install the addon as below and
-run:
+For a no-network smoke test that uses no secrets, from this repository's root:
 
 ```sh
-godot --headless --path demos/godot --script offline_quickstart.gd
+godot --headless --path . --script offline_quickstart.gd
 ```
 
-It prints `HAIVEN_TEST_PASS readiness 12`. The normal interactive demo uses a
-live WebSocket and REST API:
+It prints `HAIVEN_TEST_PASS readiness 12`. The addon is already at
+`addons/haiven`. `python3 install_addon.py` keeps that copy. Set
+`HAIVEN_SDK_GODOT` to a `haiven-sdk-godot` checkout only when replacing it;
+a missing checkout does not delete the packaged addon.
 
-1. Copy the addon in. The copy is gitignored, so the SDK keeps one source:
+The normal interactive demo uses a live WebSocket and REST API:
 
-   ```sh
-   python3 demos/godot/install_addon.py
-   ```
-
-2. Set these in the environment that launches Godot. None of them is written
+1. Set these in the environment that launches Godot. None of them is written
    to disk:
 
    | Variable | Example |
    |---|---|
    | `HAIVEN_DEMO_BASE_URL` | `https://<api host>/v0` |
    | `HAIVEN_DEMO_REALTIME_URL` | `wss://<api host>/v0/ws` |
-   | `HAIVEN_DEMO_APP_ID` | the integration's app id |
+   | `HAIVEN_DEMO_APP_ID` | the app id |
    | `HAIVEN_DEMO_CHANNEL_ID` | the chat channel to show |
-   | `HAIVEN_DEMO_ACCESS_TOKEN` | a player access token |
+   | `HAIVEN_DEMO_INTEGRATION_ID` | the launch integration id, not the app id |
+   | `HAIVEN_DEMO_SIGN_IN_URL` | `https://sbx.haiven.gg/connect/game` |
+   | `HAIVEN_DEMO_REDIRECT_URI` | optional; sign-in origin plus `/connect/game/callback` |
+   | `HAIVEN_DEMO_ACCESS_TOKEN` | optional player access token; skips the browser |
 
-3. Open `demos/godot/project.godot` in Godot 4.5.1 and run it. With a variable
-   missing, the log says which one and the demo stays offline.
+   The first four are required. If one is missing, the log names it and the
+   demo stays offline. Message of the Day calls GET /motd with
+   `HAIVEN_DEMO_INTEGRATION_ID` and skips that read when it is unset. That
+   value is the game's public launch integration id, not
+   `HAIVEN_DEMO_APP_ID`. A wrong integration id is a 400. Continue with
+   Haiven stays hidden until `HAIVEN_DEMO_SIGN_IN_URL` and the integration
+   id are set and the redirect is an absolute http(s) URL. The sign-in page
+   is not inferred from the API URL. Leave `HAIVEN_DEMO_REDIRECT_URI` unset
+   to use the sign-in origin plus `/connect/game/callback`, which needs that
+   page to be an absolute http(s) URL (sandbox
+   `https://sbx.haiven.gg/connect/game/callback`, local
+   `http://127.0.0.1:3000/connect/game/callback`). Set the variable only to
+   replace that default. The demo does not listen on that address. A
+   non-empty `HAIVEN_DEMO_ACCESS_TOKEN` starts the demo already signed in
+   and never opens a browser.
+
+2. Open `project.godot` in Godot 4.5.1 and run it.
 
 ## Verification
 
-| Check | How | Evidence |
-|---|---|---|
-| Demo behaves | `make check-godot` (part of `make check`). It copies this project and the addon into a temporary folder, imports it, and runs `demo_test.gd` headless | `HAIVEN_TEST_PASS demo 30` over a fake socket and REST request plus the editor-authored hierarchy, submit/focus wiring, behavior properties, semantic Theme hooks, public MOTD states, keyed lines, and inventory list |
-| Package consumer wires | `make check-godot-ci` | Builds and installs the deterministic addon ZIP, clean-imports it, exercises the packaged HTTP transport against an ephemeral loopback server, then runs `offline_quickstart.gd` with no credentials |
-| Scene runs | `godot --headless --path <staged demo> --quit-after 60` | Exits 0 with no engine errors or warnings, with the autoload loaded |
-| Against a live server | The steps above, against stg | Not automated: it needs a stg channel, a player token and an item entitlement |
+From the repository root, with Godot 4.5.1:
+
+```sh
+python3 -m unittest test_install_addon.py
+python3 ci/check_editor.py
+```
+
+`ci/check_editor.py` runs `offline_quickstart.gd` (`HAIVEN_TEST_PASS readiness 12`)
+and `demo_test.gd` (`HAIVEN_TEST_PASS demo 30`) with no credentials.
+`.github/workflows/build.yml` runs both on pull requests and on a `v*` tag.
+It does not publish a release. A live server is not part of that build.

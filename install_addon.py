@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Copy the SDK's GDScript addon into this demo, so the project opens in Godot."""
+"""Copy the Haiven GDScript addon into a Godot project.
+
+The addon already ships in this repository at addons/haiven. Installing into
+this project is a no-op unless HAIVEN_SDK_GODOT names another checkout. A
+missing override does not delete the packaged addon.
+"""
 
 from __future__ import annotations
 
@@ -10,22 +15,28 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 
 
+def packaged_addon() -> Path:
+    return HERE / "addons/haiven"
+
+
 def addon_source() -> Path:
-    """Sibling haiven-sdk-godot addon, or HAIVEN_SDK_GODOT when that value is non-empty."""
+    """Packaged addon, or HAIVEN_SDK_GODOT/addons/haiven when that variable is set."""
     configured = os.environ.get("HAIVEN_SDK_GODOT")
     if configured:
         return Path(configured).expanduser().resolve() / "addons/haiven"
-    return (HERE.parent / "haiven-sdk-godot" / "addons/haiven").resolve()
-
-
-ADDON = addon_source()
+    return packaged_addon()
 
 
 def install(project: Path = HERE) -> Path:
-    target = project / "addons/haiven"
+    target = (project / "addons/haiven").resolve()
+    source = addon_source().resolve()
+    if not (source / "plugin.cfg").is_file() or not (source / "plugin.gd").is_file():
+        raise SystemExit(f"Haiven addon not found at {source}")
+    if source == target:
+        return target
     if target.exists():
         shutil.rmtree(target)
-    shutil.copytree(ADDON, target, ignore=shutil.ignore_patterns("*.uid", "*.import"))
+    shutil.copytree(source, target, ignore=shutil.ignore_patterns("*.uid", "*.import"))
     return target
 
 
