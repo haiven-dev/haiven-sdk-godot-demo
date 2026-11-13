@@ -34,6 +34,18 @@ runtime behavior. `demo_theme.tres` is deliberately a demo resource, not part
 of the deterministic source-only addon ZIP. It uses stock Godot controls and
 contains no third-party artwork, font, or imported asset.
 
+## Haiven versioning
+
+haiven-sdk and haiven-sdk-godot follow semver. A feature of the Godot target
+ships in the shared major.minor release, in parity with the other target SDKs.
+A patch of haiven-sdk-godot is a fix and can ship on its own.
+
+This demo normally publishes that same major.minor but does not follow semver.
+A feature or a breaking change unique to this demo can ship as a patch, which
+leaves haiven-sdk and haiven-sdk-godot unchanged. This follows Haiven's
+accepted SDK versioning decision (ADR 0051). See [RELEASING.md](RELEASING.md)
+for how a demo patch is cut.
+
 ## Running it
 
 For a no-network smoke test that uses no secrets, install the addon as below and
@@ -74,11 +86,3 @@ live WebSocket and REST API:
 | Package consumer wires | `make check-godot-ci` | Builds and installs the deterministic addon ZIP, clean-imports it, exercises the packaged HTTP transport against an ephemeral loopback server, then runs `offline_quickstart.gd` with no credentials |
 | Scene runs | `godot --headless --path <staged demo> --quit-after 60` | Exits 0 with no engine errors or warnings, with the autoload loaded |
 | Against a live server | The steps above, against stg | Not automated: it needs a stg channel, a player token and an item entitlement |
-
-## Haiven versioning
-
-haiven-sdk and haiven-sdk-godot follow semver. A feature of the Godot target ships in the shared major.minor release, in parity with the other target SDKs. A patch of haiven-sdk-godot is a fix and can ship on its own.
-
-This demo, haiven-sdk-godot-demo, publishes that same major.minor and does not follow semver. A feature that shows part of the platform in this demo can be introduced in a patch. That patch leaves haiven-sdk and haiven-sdk-godot unchanged.
-
-The proposal is [haiven-docs ADR 0051](https://github.com/haiven-dev/haiven-docs/blob/docs/adr-0051-major-minor-lockstep/decisions/0051-major-minor-lockstep.md).
